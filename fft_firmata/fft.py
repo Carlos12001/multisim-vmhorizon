@@ -5,15 +5,15 @@ import matplotlib.pyplot as plt
 import threading
 
 # Define constants
-SAMPLES = 128
-SAMPLING_FREQUENCY = 8000
-THRESHOLD = 50
-TOLERANCE = 20
-low_freqs = [697, 770, 852]
-high_freqs = [1209, 1336, 1477]
+SAMPLES = 2048
+SAMPLING_FREQUENCY = 44100
+THRESHOLD = 0
+TOLERANCE = 250
+low_freqs = [1129, 770, 852]
+high_freqs = [3722, 1336, 1477]
 
 # Set up Arduino board using pyfirmata
-board = pyfirmata.Arduino('COM3')  # Replace 'COM3' with your actual COM port
+board = pyfirmata.Arduino('COM3') 
 it = pyfirmata.util.Iterator(board)
 it.start()
 

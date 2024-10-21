@@ -4,10 +4,10 @@
   Adjusted code based on the example provided by the creator of the arduinoFFT library
 */
 
-#define SAMPLES 128 // Reduced FFT size to save memory          // FFT size (must be a power of 2)
-#define SAMPLING_FREQUENCY 8000 // Sampling frequency adjusted to match common audio standards (8 kHz) // Sampling frequency
-#define THRESHOLD 50          // Amplitude threshold
-#define TOLERANCE 20          // Frequency tolerance in Hz
+#define SAMPLES 256 // Reduced FFT size to save memory          // FFT size (must be a power of 2)
+#define SAMPLING_FREQUENCY 44100 // Sampling frequency adjusted to match common audio standards (8 kHz) // Sampling frequency
+#define THRESHOLD 0          // Amplitude threshold
+#define TOLERANCE 200          // Frequency tolerance in Hz
 
 /* Create FFT object */
 ArduinoFFT<float> FFT = ArduinoFFT<float>();
@@ -19,14 +19,15 @@ float vReal[SAMPLES];
 float vImag[SAMPLES];
 
 const int ledPins[3][3] = {
-  {2, 3, 4},  // LEDs for the 697 Hz row
-  {5, 6, 7},  // LEDs for the 770 Hz row
-  {8, 9, 10}  // LEDs for the 852 Hz row
+  {2, 5, 8},
+  {3, 6, 9},
+  {4, 7, 10}
 };
 
+
 // Frequencies to detect
-const float lowFreqs[3] = {697, 770, 852};
-const float highFreqs[3] = {1209, 1336, 1477};
+const float lowFreqs[3] = {1129, 770, 852};
+const float highFreqs[3] = {3722, 1336, 1477};
 
 // Variables to store detections
 int lowIndex = -1;
@@ -39,7 +40,6 @@ int highIndex = -1;
 
 void setup() {
   Serial.begin(9600); // Adjusted baud rate for better compatibility
-  while (!Serial);
   Serial.println("Ready");
   sampling_period_us = round(1000000.0 / SAMPLING_FREQUENCY);
 
@@ -62,33 +62,22 @@ void loop() {
     // Wait until the next sampling period
     while(micros() - microseconds < sampling_period_us) {}
   }
+    Serial.println("HACIENDO FFT");
 
-  /* Print the results of the simulated sampling according to time */
-  Serial.println("Data:");
-  PrintVector(vReal, SAMPLES, SCL_TIME);
+
 
   /* Apply window (optional, improves FFT quality) */
   FFT.windowing(FFTWindow::Hamming, FFTDirection::Forward);
-  Serial.println("Weighed data:");
-  PrintVector(vReal, SAMPLES, SCL_TIME);
 
   /* Perform FFT */
   FFT.compute(FFTDirection::Forward);
-  Serial.println("Computed Real values:");
-  PrintVector(vReal, SAMPLES, SCL_INDEX);
-  Serial.println("Computed Imaginary values:");
-  PrintVector(vImag, SAMPLES, SCL_INDEX);
-
   /* Compute magnitudes */
   FFT.complexToMagnitude();
-  Serial.println("Computed magnitudes:");
-  PrintVector(vReal, (SAMPLES >> 1), SCL_FREQUENCY);
 
   /* Frequency detection */
   detectFrequencies(vReal);
 
-  /* Run Once */
-  while(1);
+
 }
 
 void detectFrequencies(float *vData) {
@@ -153,28 +142,4 @@ int frequencyToIndex(float freq) {
   if(freq > (SAMPLING_FREQUENCY / 2)) freq = SAMPLING_FREQUENCY / 2;
   double index = (freq * SAMPLES) / SAMPLING_FREQUENCY;
   return round(index);
-}
-
-void PrintVector(float *vData, uint16_t bufferSize, uint8_t scaleType) {
-  for (uint16_t i = 0; i < bufferSize; i++) {
-    double abscissa;
-    /* Print abscissa value */
-    switch (scaleType) {
-      case SCL_INDEX:
-        abscissa = (i * 1.0);
-        break;
-      case SCL_TIME:
-        abscissa = ((i * 1.0) / SAMPLING_FREQUENCY);
-        break;
-      case SCL_FREQUENCY:
-        abscissa = ((i * 1.0 * SAMPLING_FREQUENCY) / SAMPLES);
-        break;
-    }
-    Serial.print(abscissa, 6);
-    if(scaleType == SCL_FREQUENCY)
-      Serial.print("Hz");
-    Serial.print(" ");
-    Serial.println(vData[i], 4);
-  }
-  Serial.println();
 }
